@@ -18,8 +18,15 @@ public class AgentConfigExtractor {
 
     static final Namespace AGENT_NS = new Namespace("http://fluxnova.finos.org/schema/1.0/ai/agent");
 
-    private final AgentConfigElementWalker walker = new AgentConfigElementWalker();
-    private final AgentConfigTargetPolicy targetPolicy = new AdHocSubProcessTargetPolicy();
+    private final AgentConfigElementWalker walker;
+
+    public AgentConfigExtractor() {
+        this(new AgentConfigElementWalker());
+    }
+
+    AgentConfigExtractor(AgentConfigElementWalker walker) {
+        this.walker = walker;
+    }
 
     public List<AgentConfig> extractAll(InputStream bpmnXml, String processDefinitionId) {
         List<AgentConfig> results = new ArrayList<>();
@@ -27,9 +34,7 @@ public class AgentConfigExtractor {
         Element root = parse.getRootElement();
         for (Element process : root.elements("process")) {
             for (Element element : walker.walk(process)) {
-                if (targetPolicy.supports(element)) {
-                    extract(element, processDefinitionId).ifPresent(results::add);
-                }
+                extract(element, processDefinitionId).ifPresent(results::add);
             }
         }
         return results;

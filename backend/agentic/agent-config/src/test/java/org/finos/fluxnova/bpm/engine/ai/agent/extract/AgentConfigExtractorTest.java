@@ -149,7 +149,7 @@ class AgentConfigExtractorTest {
     }
 
     @Test
-    void extractAll_ignoresAgentConfigOnServiceTask() {
+    void extractAll_findsAgentConfigOnServiceTask() {
         String bpmn = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -169,7 +169,9 @@ class AgentConfigExtractorTest {
         List<AgentConfig> results = extractor.extractAll(
                 new ByteArrayInputStream(bpmn.getBytes(StandardCharsets.UTF_8)), PROCESS_DEFINITION_ID);
 
-        assertTrue(results.isEmpty());
+  assertEquals(1, results.size());
+  assertEquals("taskAgent", results.get(0).elementId());
+  assertEquals("taskAgent", results.get(0).toolScopeElementId());
     }
 
     @Test
