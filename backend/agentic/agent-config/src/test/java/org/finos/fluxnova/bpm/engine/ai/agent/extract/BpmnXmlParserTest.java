@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BpmnXmlParserTest {
 
@@ -18,6 +20,16 @@ class BpmnXmlParserTest {
               <process id="testProcess"/>
             </definitions>
             """;
+
+        private static final String BPMN_WITH_DOCTYPE = """
+                        <?xml version="1.0" encoding="UTF-8"?>
+                        <!DOCTYPE definitions [
+                            <!ELEMENT definitions ANY >
+                        ]>
+                        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                            <process id="testProcess"/>
+                        </definitions>
+                        """;
 
     @Test
     void parse_returnsRootElementWithCorrectTagName() {
@@ -43,5 +55,16 @@ class BpmnXmlParserTest {
 
         assertNotNull(process);
         assertEquals("testProcess", process.attribute("id"));
+    }
+
+    @Test
+    void parse_rejectsDoctypeDeclarations() {
+        BpmnXmlParser parser = new BpmnXmlParser();
+
+        Exception thrown = assertThrows(Exception.class, () -> parser.createParse()
+                .sourceInputStream(new ByteArrayInputStream(BPMN_WITH_DOCTYPE.getBytes(StandardCharsets.UTF_8)))
+                .execute());
+
+        assertTrue(thrown.getMessage().contains("DOCTYPE is disallowed"));
     }
 }
