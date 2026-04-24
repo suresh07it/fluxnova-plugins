@@ -3,7 +3,6 @@ package org.finos.fluxnova.bpm.engine.ai.agent.extract;
 import org.finos.fluxnova.bpm.engine.ai.agent.model.AgentConfig;
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Element;
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Parse;
-import org.finos.fluxnova.bpm.model.bpmn.AdHocOrdering;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -84,7 +83,7 @@ class AgentConfigExtractorTest {
                         <agent:config provider="anthropic"
                                       model="claude-sonnet-4-6"
                                       systemPrompt="You are a credit analyst."
-                                      toolScope="creditCheckAgent"/>
+                                      toolScopeElementId="creditCheckAgent"/>
                       </extensionElements>
                     </adHocSubProcess>
                   </process>
@@ -100,8 +99,7 @@ class AgentConfigExtractorTest {
         assertEquals("anthropic", config.provider());
         assertEquals("claude-sonnet-4-6", config.model());
         assertEquals("You are a credit analyst.", config.systemPrompt());
-        assertEquals("creditCheckAgent", config.toolScope());
-        assertNull(config.ordering());
+        assertEquals("creditCheckAgent", config.toolScopeElementId());
     }
 
     @Test
@@ -125,31 +123,7 @@ class AgentConfigExtractorTest {
         Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
 
         assertTrue(result.isPresent());
-        assertEquals("myAgent", result.get().toolScope());
-    }
-
-    @Test
-    void extract_whenOrderingAttributePresent_parsesToEnum() {
-        String bpmn = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                             xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
-                  <process id="p">
-                    <adHocSubProcess id="myAgent" ordering="Sequential">
-                      <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"
-                                      systemPrompt="You are an assistant."/>
-                      </extensionElements>
-                    </adHocSubProcess>
-                  </process>
-                </definitions>
-                """;
-
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
-
-        assertTrue(result.isPresent());
-        assertEquals(AdHocOrdering.Sequential, result.get().ordering());
+        assertEquals("myAgent", result.get().toolScopeElementId());
     }
 
     @Test
@@ -175,51 +149,27 @@ class AgentConfigExtractorTest {
     }
 
     @Test
-    void extract_whenOrderingAttributeHasWrongCase_matchesCaseInsensitively() {
+    void extractAll_ignoresAgentConfigOnServiceTask() {
         String bpmn = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
                              xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
                   <process id="p">
-                    <adHocSubProcess id="myAgent" ordering="parallel">
+                    <serviceTask id="taskAgent">
                       <extensionElements>
                         <agent:config provider="anthropic"
                                       model="claude-sonnet-4-6"
-                                      systemPrompt="You are an assistant."/>
+                                      systemPrompt="Task agent."/>
                       </extensionElements>
-                    </adHocSubProcess>
+                    </serviceTask>
                   </process>
                 </definitions>
                 """;
 
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
+        List<AgentConfig> results = extractor.extractAll(
+                new ByteArrayInputStream(bpmn.getBytes(StandardCharsets.UTF_8)), PROCESS_DEFINITION_ID);
 
-        assertTrue(result.isPresent());
-        assertEquals(AdHocOrdering.Parallel, result.get().ordering());
-    }
-
-    @Test
-    void extract_whenOrderingAttributeUnrecognised_returnsConfigWithNullOrdering() {
-        String bpmn = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                             xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
-                  <process id="p">
-                    <adHocSubProcess id="myAgent" ordering="NotAnOrdering">
-                      <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"
-                                      systemPrompt="You are an assistant."/>
-                      </extensionElements>
-                    </adHocSubProcess>
-                  </process>
-                </definitions>
-                """;
-
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
-
-        assertTrue(result.isPresent());
-        assertNull(result.get().ordering());
+        assertTrue(results.isEmpty());
     }
 
     @Test
@@ -274,6 +224,33 @@ class AgentConfigExtractorTest {
 
         assertEquals(1, results.size());
         assertEquals("eventAgent", results.get(0).elementId());
+    }
+
+    @Test
+    void extractAll_findsAdHocSubProcessInsideTransaction() {
+        String bpmn = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
+                  <process id="p">
+                    <transaction id="tx1">
+                      <adHocSubProcess id="transactionAgent">
+                        <extensionElements>
+                          <agent:config provider="anthropic"
+                                        model="claude-sonnet-4-6"
+                                        systemPrompt="Transaction agent."/>
+                        </extensionElements>
+                      </adHocSubProcess>
+                    </transaction>
+                  </process>
+                </definitions>
+                """;
+
+        List<AgentConfig> results = extractor.extractAll(
+                new ByteArrayInputStream(bpmn.getBytes(StandardCharsets.UTF_8)), PROCESS_DEFINITION_ID);
+
+        assertEquals(1, results.size());
+        assertEquals("transactionAgent", results.get(0).elementId());
     }
 
     @Test
