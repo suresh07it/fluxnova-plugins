@@ -1,4 +1,4 @@
-package org.finos.fluxnova.bpm.engine.ai.agent.extract;
+package org.finos.fluxnova.bpm.engine.shared.xml;
 
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Element;
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Parse;
@@ -21,15 +21,15 @@ class BpmnXmlParserTest {
             </definitions>
             """;
 
-        private static final String BPMN_WITH_DOCTYPE = """
-                        <?xml version="1.0" encoding="UTF-8"?>
-                        <!DOCTYPE definitions [
-                            <!ELEMENT definitions ANY >
-                        ]>
-                        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
-                            <process id="testProcess"/>
-                        </definitions>
-                        """;
+    private static final String BPMN_WITH_DOCTYPE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE definitions [
+                <!ELEMENT definitions ANY >
+            ]>
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                <process id="testProcess"/>
+            </definitions>
+            """;
 
     @Test
     void parse_returnsRootElementWithCorrectTagName() {

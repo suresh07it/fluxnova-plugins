@@ -1,4 +1,4 @@
-package org.finos.fluxnova.bpm.engine.ai.agent.extract;
+package org.finos.fluxnova.bpm.engine.shared.xml;
 
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Parse;
 import org.finos.fluxnova.bpm.engine.impl.util.xml.Parser;
