@@ -80,6 +80,7 @@ class AgentConfigRegistryTest {
         assertEquals(ELEMENT_ID, config.elementId());
         assertEquals("anthropic", config.provider());
         assertEquals("claude-sonnet-4-6", config.model());
+                assertEquals(ELEMENT_ID, config.toolScopeElementId());
     }
 
     @Test
