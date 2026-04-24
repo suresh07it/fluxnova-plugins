@@ -11,7 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentConfigExtractorTest {
 
@@ -34,42 +36,7 @@ class AgentConfigExtractorTest {
                 .element("adHocSubProcess");
     }
 
-    @Test
-    void extract_whenNoExtensionElements_returnsEmpty() {
-        String bpmn = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
-                  <process id="p">
-                    <adHocSubProcess id="sub1"/>
-                  </process>
-                </definitions>
-                """;
-
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void extract_whenExtensionElementsButNoAgentConfig_returnsEmpty() {
-        String bpmn = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                             xmlns:other="http://example.com/other">
-                  <process id="p">
-                    <adHocSubProcess id="sub1">
-                      <extensionElements>
-                        <other:config provider="x"/>
-                      </extensionElements>
-                    </adHocSubProcess>
-                  </process>
-                </definitions>
-                """;
-
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
-
-        assertTrue(result.isEmpty());
-    }
+    // extract(Element, ...) valid config and defaulting
 
     @Test
     void extract_whenValidAgentConfig_returnsPopulatedAgentConfig() {
@@ -127,6 +94,70 @@ class AgentConfigExtractorTest {
     }
 
     @Test
+    void extract_whenToolScopeBlank_defaultsToElementId() {
+        String bpmn = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
+                  <process id="p">
+                    <adHocSubProcess id="myAgent">
+                      <extensionElements>
+                        <agent:config provider="ollama"
+                                      model="llama3.1"
+                                      systemPrompt="You are an assistant."
+                                      toolScopeElementId=""/>
+                      </extensionElements>
+                    </adHocSubProcess>
+                  </process>
+                </definitions>
+                """;
+
+        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
+
+        assertTrue(result.isPresent());
+        assertEquals("myAgent", result.get().toolScopeElementId());
+    }
+
+    // extract(Element, ...) missing and invalid config
+
+    @Test
+    void extract_whenNoExtensionElements_returnsEmpty() {
+        String bpmn = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                  <process id="p">
+                    <adHocSubProcess id="sub1"/>
+                  </process>
+                </definitions>
+                """;
+
+        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void extract_whenExtensionElementsButNoAgentConfig_returnsEmpty() {
+        String bpmn = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:other="http://example.com/other">
+                  <process id="p">
+                    <adHocSubProcess id="sub1">
+                      <extensionElements>
+                        <other:config provider="x"/>
+                      </extensionElements>
+                    </adHocSubProcess>
+                  </process>
+                </definitions>
+                """;
+
+        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void extract_whenRequiredAttributeMissing_returnsEmpty() {
         String bpmn = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -157,7 +188,7 @@ class AgentConfigExtractorTest {
                   <process id="p">
                     <adHocSubProcess id="myAgent">
                       <extensionElements>
-                        <agent:config provider="anthropic"
+                        <agent:config provider="ollama"
                                       systemPrompt="You are an assistant."/>
                       </extensionElements>
                     </adHocSubProcess>
@@ -179,8 +210,8 @@ class AgentConfigExtractorTest {
                   <process id="p">
                     <adHocSubProcess id="myAgent">
                       <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"/>
+                        <agent:config provider="ollama"
+                                      model="llama3.1"/>
                       </extensionElements>
                     </adHocSubProcess>
                   </process>
@@ -202,7 +233,7 @@ class AgentConfigExtractorTest {
                     <adHocSubProcess id="myAgent">
                       <extensionElements>
                         <agent:config provider=""
-                                      model="claude-sonnet-4-6"
+                                      model="llama3.1"
                                       systemPrompt="You are an assistant."/>
                       </extensionElements>
                     </adHocSubProcess>
@@ -215,30 +246,7 @@ class AgentConfigExtractorTest {
         assertTrue(result.isEmpty());
     }
 
-    @Test
-    void extract_whenToolScopeBlank_defaultsToElementId() {
-        String bpmn = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                             xmlns:agent="http://fluxnova.finos.org/schema/1.0/ai/agent">
-                  <process id="p">
-                    <adHocSubProcess id="myAgent">
-                      <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"
-                                      systemPrompt="You are an assistant."
-                                      toolScopeElementId=""/>
-                      </extensionElements>
-                    </adHocSubProcess>
-                  </process>
-                </definitions>
-                """;
-
-        Optional<AgentConfig> result = extractor.extract(parseAdHocSubProcess(bpmn), PROCESS_DEFINITION_ID);
-
-        assertTrue(result.isPresent());
-        assertEquals("myAgent", result.get().toolScopeElementId());
-    }
+    // extractAll(...) tool-scope validation
 
     @Test
     void extractAll_whenToolScopeReferencesUnknownElement_throws() {
@@ -249,8 +257,8 @@ class AgentConfigExtractorTest {
                   <process id="p">
                     <adHocSubProcess id="myAgent">
                       <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"
+                        <agent:config provider="ollama"
+                                      model="llama3.1"
                                       systemPrompt="You are an assistant."
                                       toolScopeElementId="doesNotExist"/>
                       </extensionElements>
@@ -278,8 +286,8 @@ class AgentConfigExtractorTest {
                     <subProcess id="toolRegistry"/>
                     <adHocSubProcess id="myAgent">
                       <extensionElements>
-                        <agent:config provider="anthropic"
-                                      model="claude-sonnet-4-6"
+                        <agent:config provider="ollama"
+                                      model="llama3.1"
                                       systemPrompt="You are an assistant."
                                       toolScopeElementId="toolRegistry"/>
                       </extensionElements>
@@ -294,6 +302,8 @@ class AgentConfigExtractorTest {
         assertEquals(1, results.size());
         assertEquals("toolRegistry", results.get(0).toolScopeElementId());
     }
+
+    // extractAll(...) discovery across BPMN structures
 
     @Test
     void extractAll_findsAgentConfigOnServiceTask() {
@@ -316,9 +326,9 @@ class AgentConfigExtractorTest {
         List<AgentConfig> results = extractor.extractAll(
                 new ByteArrayInputStream(bpmn.getBytes(StandardCharsets.UTF_8)), PROCESS_DEFINITION_ID);
 
-  assertEquals(1, results.size());
-  assertEquals("taskAgent", results.get(0).elementId());
-  assertEquals("taskAgent", results.get(0).toolScopeElementId());
+        assertEquals(1, results.size());
+        assertEquals("taskAgent", results.get(0).elementId());
+        assertEquals("taskAgent", results.get(0).toolScopeElementId());
     }
 
     @Test
