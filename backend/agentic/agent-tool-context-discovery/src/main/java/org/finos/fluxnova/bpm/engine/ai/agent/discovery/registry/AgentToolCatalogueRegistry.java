@@ -1,5 +1,6 @@
 package org.finos.fluxnova.bpm.engine.ai.agent.discovery.registry;
 
+import org.finos.fluxnova.bpm.engine.ProcessEngineException;
 import org.finos.fluxnova.bpm.engine.RepositoryService;
 import org.finos.fluxnova.bpm.engine.ai.agent.discovery.extract.AgentToolCatalogueBuilder;
 import org.finos.fluxnova.bpm.engine.ai.agent.discovery.model.AgentToolCatalogue;
@@ -66,9 +67,12 @@ public class AgentToolCatalogueRegistry {
                 LOG.warn("Tool scope element '{}' not found in process definition '{}'", toolScope, processDefinitionId);
                 return Boolean.TRUE;
             }
-
             AgentToolCatalogue catalogue = catalogueBuilder.build(scopeElement, processDefinitionId);
             catalogues.put(key(processDefinitionId, elementId), catalogue);
+            return Boolean.TRUE;
+        } catch (ProcessEngineException e) {
+            LOG.error("Invalid tool configuration in process definition '{}': {}",
+                    processDefinitionId, e.getMessage());
             return Boolean.TRUE;
         } catch (IOException e) {
             LOG.error("Failed to scan process definition '{}' for tool catalogue", processDefinitionId, e);

@@ -1,5 +1,6 @@
 package org.finos.fluxnova.bpm.engine.ai.agent.discovery.registry;
 
+import org.finos.fluxnova.bpm.engine.ProcessEngineException;
 import org.finos.fluxnova.bpm.engine.RepositoryService;
 import org.finos.fluxnova.bpm.engine.ai.agent.discovery.extract.AgentContextSpecExtractor;
 import org.finos.fluxnova.bpm.engine.ai.agent.discovery.model.AgentContextSpec;
@@ -68,6 +69,10 @@ public class AgentContextSpecRegistry {
 
             AgentContextSpec spec = extractor.extract(adHocElement, processDefinitionId);
             specs.put(key(processDefinitionId, elementId), spec);
+            return Boolean.TRUE; 
+        } catch (ProcessEngineException e) {
+            LOG.error("Invalid tool configuration in process definition '{}': {}",
+                    processDefinitionId, e.getMessage());
             return Boolean.TRUE;
         } catch (IOException e) {
             LOG.error("Failed to scan process definition '{}' for context spec", processDefinitionId, e);
