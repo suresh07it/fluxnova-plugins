@@ -16,7 +16,9 @@ class AgentConfigElementWalker {
     private void collect(Element parent, List<Element> elements) {
         for (Element child : parent.elements()) {
             elements.add(child);
-            collect(child, elements);
+            if (!"extensionElements".equals(child.getTagName())) {
+                collect(child, elements);
+            }
         }
     }
 }

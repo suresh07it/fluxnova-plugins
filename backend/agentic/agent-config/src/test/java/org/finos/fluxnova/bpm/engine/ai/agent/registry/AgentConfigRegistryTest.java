@@ -29,8 +29,8 @@ class AgentConfigRegistryTest {
               <process id="creditCheck">
                 <adHocSubProcess id="creditCheckAgent">
                   <extensionElements>
-                    <agent:config provider="anthropic"
-                                  model="claude-sonnet-4-6"
+                    <agent:config provider="ollama"
+                                  model="llama3.1"
                                   systemPrompt="You are a credit analyst."/>
                   </extensionElements>
                 </adHocSubProcess>
@@ -78,8 +78,8 @@ class AgentConfigRegistryTest {
         AgentConfig config = result.get();
         assertEquals(PROC_DEF_ID, config.processDefinitionId());
         assertEquals(ELEMENT_ID, config.elementId());
-        assertEquals("anthropic", config.provider());
-        assertEquals("claude-sonnet-4-6", config.model());
+        assertEquals("ollama", config.provider());
+        assertEquals("llama3.1", config.model());
                 assertEquals(ELEMENT_ID, config.toolScopeElementId());
     }
 
@@ -137,7 +137,7 @@ class AgentConfigRegistryTest {
         // Second call should retry and succeed (not permanently marked as scanned)
         Optional<AgentConfig> second = registry.resolve(PROC_DEF_ID, ELEMENT_ID);
         assertTrue(second.isPresent());
-        assertEquals("anthropic", second.get().provider());
+        assertEquals("ollama", second.get().provider());
 
         verify(repositoryService, times(2)).getProcessModel(PROC_DEF_ID);
     }
