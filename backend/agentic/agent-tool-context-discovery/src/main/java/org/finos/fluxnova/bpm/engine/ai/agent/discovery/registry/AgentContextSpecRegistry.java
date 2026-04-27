@@ -41,8 +41,8 @@ public class AgentContextSpecRegistry {
     }
 
     public void unregisterAll() {
-        scanned.clear();
         specs.clear();
+        scanned.clear();
     }
 
     private void ensureScanned(String processDefinitionId, String elementId) {

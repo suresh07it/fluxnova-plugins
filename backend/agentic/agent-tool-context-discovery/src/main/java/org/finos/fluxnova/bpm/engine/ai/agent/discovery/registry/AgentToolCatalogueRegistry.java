@@ -41,8 +41,8 @@ public class AgentToolCatalogueRegistry {
     }
 
     public void unregisterAll() {
-        scanned.clear();
         catalogues.clear();
+        scanned.clear();
     }
 
     private void ensureScanned(String processDefinitionId, String elementId) {
