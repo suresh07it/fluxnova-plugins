@@ -71,6 +71,7 @@ public class AgentContextSpecRegistry {
             return Boolean.TRUE;
         } catch (IOException e) {
             LOG.error("Failed to scan process definition '{}' for context spec", processDefinitionId, e);
+            // if IOException occurs, return null so we can retry next time
             return null;
         }
     }
