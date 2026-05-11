@@ -19,15 +19,28 @@ public class PocController {
     }
 
     @PostMapping("/poc/start")
-    public Map<String, Object> start(@RequestParam(name = "userQuestion", required = false) String userQuestion,
+    public Map<String, Object> start(@RequestParam(name = "applicantMessage", required = false) String applicantMessage,
+                                     @RequestParam(name = "applicantId", required = false) String applicantId,
+                                     @RequestParam(name = "loanAmount", required = false) Integer loanAmount,
+                                     @RequestParam(name = "annualIncome", required = false) Integer annualIncome,
+                                     @RequestParam(name = "creditScore", required = false) Integer creditScore,
+                                     @RequestParam(name = "loanPurpose", required = false) String loanPurpose,
+                                     @RequestParam(name = "userQuestion", required = false) String userQuestion,
                                      @RequestParam(name = "customerId", required = false) String customerId,
                                      @RequestParam(name = "applicationAmount", required = false) Integer applicationAmount,
                                      @RequestParam(name = "maxTurns", required = false) Integer maxTurns) {
 
         Map<String, Object> vars = new LinkedHashMap<>();
-        if (userQuestion != null) vars.put("userQuestion", userQuestion);
-        if (customerId != null) vars.put("customerId", customerId);
-        if (applicationAmount != null) vars.put("applicationAmount", applicationAmount);
+        String resolvedApplicantMessage = applicantMessage != null ? applicantMessage : userQuestion;
+        String resolvedApplicantId = applicantId != null ? applicantId : customerId;
+        Integer resolvedLoanAmount = loanAmount != null ? loanAmount : applicationAmount;
+
+        if (resolvedApplicantMessage != null) vars.put("applicantMessage", resolvedApplicantMessage);
+        if (resolvedApplicantId != null) vars.put("applicantId", resolvedApplicantId);
+        if (resolvedLoanAmount != null) vars.put("loanAmount", resolvedLoanAmount);
+        if (annualIncome != null) vars.put("annualIncome", annualIncome);
+        if (creditScore != null) vars.put("creditScore", creditScore);
+        if (loanPurpose != null) vars.put("loanPurpose", loanPurpose);
         if (maxTurns != null) vars.put("_agent.maxTurns", maxTurns);
 
         Map<String, Object> out = new LinkedHashMap<>();

@@ -28,7 +28,7 @@ public class AgentTurnDelegate implements JavaDelegate {
     private static final String VAR_MAX_TURNS = "_agent.maxTurns";
     private static final String VAR_HISTORY = "_agent.history";
     private static final String VAR_LAST_ASSISTANT_TEXT = "_agent.lastAssistantText";
-    private static final String DEFAULT_USER_QUESTION_VAR = "userQuestion";
+    private static final List<String> INITIAL_MESSAGE_VARS = List.of("applicantMessage", "userQuestion");
 
     private final ObjectMapper objectMapper;
     private final AgentConfigRegistry agentConfigRegistry;
@@ -70,9 +70,12 @@ public class AgentTurnDelegate implements JavaDelegate {
 
         List<ConversationEntry> history = readHistory(execution);
         if (history.isEmpty()) {
-            Object q = execution.getVariable(DEFAULT_USER_QUESTION_VAR);
-            if (q != null && !q.toString().isBlank()) {
-                history = List.of(ConversationEntry.user(q.toString()));
+            for (String varName : INITIAL_MESSAGE_VARS) {
+                Object q = execution.getVariable(varName);
+                if (q != null && !q.toString().isBlank()) {
+                    history = List.of(ConversationEntry.user(q.toString()));
+                    break;
+                }
             }
         }
 

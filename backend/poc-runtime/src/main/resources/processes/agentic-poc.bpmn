@@ -7,24 +7,27 @@
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
              targetNamespace="http://fluxnova.finos.org/poc/agentic">
-  <process id="agenticPoc" name="Agentic POC" isExecutable="true" camunda:historyTimeToLive="1">
+  <process id="agenticPoc" name="Loan Processing POC" isExecutable="true" camunda:historyTimeToLive="1">
     <startEvent id="start"/>
-    <subProcess id="agentContainer" name="Agent Container">
+    <subProcess id="agentContainer" name="Loan Officer Agent Review">
       <extensionElements>
-        <agent:config provider="ollama" model="gemma3:1b" systemPrompt="You are a helpful assistant. Use the provided variables to answer the user's question."/>
+        <agent:config provider="ollama" model="gemma3:1b" systemPrompt="You are a loan processing officer. Review the loan application context and the applicant message. Produce a clear recommendation (APPROVE / REVIEW / REJECT), the key reasons, missing information (if any), and the next actions for a human loan team. If data is insufficient, ask precise follow-up questions."/>
         <agent:context>
-          <agent:variable name="customerId"/>
-          <agent:variable name="applicationAmount"/>
-          <agent:variable name="userQuestion"/>
+          <agent:variable name="applicantId"/>
+          <agent:variable name="loanAmount"/>
+          <agent:variable name="annualIncome"/>
+          <agent:variable name="creditScore"/>
+          <agent:variable name="loanPurpose"/>
+          <agent:variable name="applicantMessage"/>
         </agent:context>
       </extensionElements>
       <startEvent id="agentStart"/>
-      <serviceTask id="agentTurn" name="Agent Turn" camunda:delegateExpression="${agentTurnDelegate}"/>
+      <serviceTask id="agentTurn" name="Loan Officer Turn" camunda:delegateExpression="${agentTurnDelegate}"/>
       <endEvent id="agentEnd"/>
       <sequenceFlow id="agentFlow1" sourceRef="agentStart" targetRef="agentTurn"/>
       <sequenceFlow id="agentFlow2" sourceRef="agentTurn" targetRef="agentEnd"/>
     </subProcess>
-    <userTask id="reviewTask" name="Review Result"/>
+    <userTask id="reviewTask" name="Human Loan Review"/>
     <endEvent id="end"/>
     <sequenceFlow id="flow1" sourceRef="start" targetRef="agentContainer"/>
     <sequenceFlow id="flow2" sourceRef="agentContainer" targetRef="reviewTask"/>
